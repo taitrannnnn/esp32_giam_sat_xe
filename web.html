@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Giám sát 3 xe — Realtime Firebase</title>
+
+  <!-- TailwindCSS (CDN) cho giao diện nhanh, hiện đại -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Leaflet (bản đồ, không cần API key) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-o9N1j7kG9B2v0Q+1JZbH5Wgw0WQdFv2QgiJTsy8GxXQ="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j7kG9B2v0Q+1JZbH5Wgw0WQdFv2QgiJTsy8GxXQ="
+    crossorigin=""
+  ></script>
+
+  <style>
+    html, body { height: 100%; }
+    #map { height: 420px; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <header class="px-4 sm:px-8 py-5 border-b border-slate-800 sticky top-0 bg-slate-950/80 backdrop-blur">
+    <h1 class="text-2xl sm:text-3xl font-semibold">Giám sát đội xe (3 xe) — Cập nhật realtime từ Firebase</h1>
+    <p class="text-slate-400 mt-1">Thông số: Tốc độ (km/h), Vòng tua (RPM), Nhiên liệu (%), GPS.</p>
+  </header>
+
+  <main class="px-4 sm:px-8 py-6 space-y-6">
+    <!-- Cards thông số cho 3 xe -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Mẫu card, nhân 3 -->
+      <article id="car1-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-semibold">Xe 1</h2>
+          <span id="car1-updated" class="text-xs text-slate-400">—</span>
+        </div>
+        <div class="space-y-2">
+          <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car1-speed">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car1-rpm">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Nhiên liệu</span><strong id="car1-fuel">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car1-gps">—</strong></div>
+        </div>
+      </article>
+
+      <article id="car2-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-semibold">Xe 2</h2>
+          <span id="car2-updated" class="text-xs text-slate-400">—</span>
+        </div>
+        <div class="space-y-2">
+          <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car2-speed">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car2-rpm">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Nhiên liệu</span><strong id="car2-fuel">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car2-gps">—</strong></div>
+        </div>
+      </article>
+
+      <article id="car3-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-semibold">Xe 3</h2>
+          <span id="car3-updated" class="text-xs text-slate-400">—</span>
+        </div>
+        <div class="space-y-2">
+          <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car3-speed">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car3-rpm">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Nhiên liệu</span><strong id="car3-fuel">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car3-gps">—</strong></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Bản đồ vị trí 3 xe -->
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-3 shadow-lg">
+      <div class="flex items-center justify-between px-1 pb-2">
+        <h3 class="text-lg font-semibold">Bản đồ GPS (Leaflet + OpenStreetMap)</h3>
+        <div class="text-xs text-slate-400">kéo/thu phóng để xem khu vực</div>
+      </div>
+      <div id="map" class="rounded-xl"></div>
+    </section>
+  </main>
+
+  <!-- Firebase v10 (ESM, Realtime Database) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    // 1) CẤU HÌNH FIREBASE — THAY BẰNG PROJECT CỦA BẠN
+    const firebaseConfig = {
+      apiKey: "AIzaSyBsA0_xFCmVEU5AgjKZDh50WhTe_06Bfgk",
+      authDomain: "esp32-606ff.firebaseapp.com",
+      databaseURL: "https://console.firebase.google.com/u/1/project/esp32-606ff/database/esp32-606ff-default-rtdb/data/~2F",
+      projectId: "esp32-606ff",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "884972816677",
+      appId: "APP_ID"
+    };
+
+    // 2) KHỞI TẠO ỨNG DỤNG + DB
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // 3) DANH SÁCH XE & THAM CHIẾU DOM
+    const carIds = ["car1", "car2", "car3"];
+    const dom = Object.fromEntries(
+      carIds.map(id => [
+        id,
+        {
+          speed: document.getElementById(`${id}-speed`),
+          rpm: document.getElementById(`${id}-rpm`),
+          fuel: document.getElementById(`${id}-fuel`),
+          gps: document.getElementById(`${id}-gps`),
+          updated: document.getElementById(`${id}-updated`)
+        }
+      ])
+    );
+
+    // 4) KHỞI TẠO BẢN ĐỒ LEAFLET
+    const map = L.map("map", { zoomControl: true, attributionControl: true });
+    // Tâm mặc định: Việt Nam
+    map.setView([16.047, 108.206], 6); // Đà Nẵng vùng giữa VN
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    // Icon màu khác nhau cho 3 xe
+    function markerIcon(color) {
+      // SVG icon đơn giản (data URI)
+      const svg = encodeURIComponent(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='${color}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+          <path d='M12 21s-6-5.686-6-10a6 6 0 1 1 12 0c0 4.314-6 10-6 10z'/>
+          <circle cx='12' cy='11' r='2'/>
+        </svg>`);
+      return L.icon({
+        iconUrl: `data:image/svg+xml;utf8,${svg}`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -28]
+      });
+    }
+    const colorByCar = { car1: "#60a5fa", car2: "#34d399", car3: "#f472b6" };
+    const markers = {};
+
+    // 5) HÀM TIỆN ÍCH
+    function fmt(val, unit = "") {
+      if (val === undefined || val === null || Number.isNaN(val)) return "—";
+      return `${val.toLocaleString()}${unit}`;
+    }
+    function fmtTime(ts) {
+      if (!ts) return "—";
+      const d = new Date(ts);
+      // Hiển thị hh:mm:ss, ngày/tháng
+      return d.toLocaleTimeString() + " • " + d.toLocaleDateString();
+    }
+
+    // 6) LẮNG NGHE REALTIME CHO TỪNG XE
+    carIds.forEach((id) => {
+      const vehicleRef = ref(db, `vehicles/${id}`);
+      onValue(vehicleRef, (snap) => {
+        const data = snap.val() || {};
+        // Cập nhật card
+        dom[id].speed.textContent = fmt(data.speed_kph, " km/h");
+        dom[id].rpm.textContent = fmt(data.rpm, " RPM");
+        dom[id].fuel.textContent = fmt(data.fuel_percent, " %");
+        if (data.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
+          dom[id].gps.textContent = `${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)}`;
+          // Cập nhật marker
+          if (!markers[id]) {
+            markers[id] = L.marker([data.gps.lat, data.gps.lng], {
+              icon: markerIcon(colorByCar[id] || "#ffffff"),
+            })
+            .addTo(map)
+            .bindPopup(`<strong>${id.toUpperCase()}</strong><br/>${fmt(data.speed_kph, " km/h")} — ${fmt(data.rpm, " RPM")}<br/>Nhiên liệu: ${fmt(data.fuel_percent, " %")}`);
+          } else {
+            markers[id].setLatLng([data.gps.lat, data.gps.lng]);
+            markers[id].setPopupContent(
+              `<strong>${id.toUpperCase()}</strong><br/>${fmt(data.speed_kph, " km/h")} — ${fmt(data.rpm, " RPM")}<br/>Nhiên liệu: ${fmt(data.fuel_percent, " %")}`
+            );
+          }
+        } else {
+          dom[id].gps.textContent = "—";
+        }
+        dom[id].updated.textContent = fmtTime(data.lastUpdated || Date.now());
+      }, (err) => {
+        console.error("Firebase error:", err);
+      });
+    });
+
+    // 7) TUỲ CHỌN: Tự động fit bản đồ khi đã có >=1 marker
+    const fitIfReady = () => {
+      const latLngs = Object.values(markers).map(m => m.getLatLng());
+      if (latLngs.length > 0) {
+        const bounds = L.latLngBounds(latLngs);
+        map.fitBounds(bounds.pad(0.3));
+      }
+    };
+    // Thử fit sau vài giây (khi dữ liệu bắt đầu đổ về)
+    setTimeout(fitIfReady, 2500);
+    setTimeout(fitIfReady, 6000);
+  </script>
+
+  <!-- Gợi ý cấu trúc dữ liệu (tham khảo)
+  {
+    "vehicles": {
+      "car1": {
+        "speed_kph": 52,
+        "rpm": 1800,
+        "fuel_percent": 64,
+        "gps": { "lat": 10.7769, "lng": 106.7009 },
+        "lastUpdated": 1733576400000
+      },
+      "car2": { ... },
+      "car3": { ... }
+    }
+  }
+  -->
+
+  <!-- Lưu ý bảo mật:
+    - Thiết lập Realtime Database Rules phù hợp (chỉ đọc/ghi cho người dùng được phép).
+    - Không để API key nhạy cảm bên client nếu dùng các dịch vụ khác.
+  -->
+</body>
+</html>
