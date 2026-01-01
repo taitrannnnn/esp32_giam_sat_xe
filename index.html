@@ -92,14 +92,16 @@
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     // 1) CẤU HÌNH FIREBASE — THAY BẰNG PROJECT CỦA BẠN
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
     const firebaseConfig = {
       apiKey: "AIzaSyBsA0_xFCmVEU5AgjKZDh50WhTe_06Bfgk",
       authDomain: "esp32-606ff.firebaseapp.com",
-      databaseURL: "https://console.firebase.google.com/u/1/project/esp32-606ff/database/esp32-606ff-default-rtdb/data/~2F",
+      databaseURL: "https://esp32-606ff-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "esp32-606ff",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      storageBucket: "esp32-606ff.firebasestorage.app",
       messagingSenderId: "884972816677",
-      appId: "APP_ID"
+      appId: "1:884972816677:web:594fe5876f9acb8ea3f2cc",
+      measurementId: "G-ZSH8JDZ35J"
     };
 
     // 2) KHỞI TẠO ỨNG DỤNG + DB
@@ -228,3 +230,4 @@
   -->
 </body>
 </html>
+
