@@ -163,37 +163,22 @@
     }
 
     // 6) LẮNG NGHE REALTIME CHO TỪNG XE
-    carIds.forEach((id) => {
-      const vehicleRef = ref(db, `vehicles/${id}`);
-      onValue(vehicleRef, (snap) => {
-        const data = snap.val() || {};
-        // Cập nhật card
-        dom[id].speed.textContent = fmt(data.speed_kph, " km/h");
-        dom[id].rpm.textContent = fmt(data.rpm, " RPM");
-        dom[id].fuel.textContent = fmt(data.fuel_percent, " %");
-        if (data.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
-          dom[id].gps.textContent = `${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)}`;
-          // Cập nhật marker
-          if (!markers[id]) {
-            markers[id] = L.marker([data.gps.lat, data.gps.lng], {
-              icon: markerIcon(colorByCar[id] || "#ffffff"),
-            })
-            .addTo(map)
-            .bindPopup(`<strong>${id.toUpperCase()}</strong><br/>${fmt(data.speed_kph, " km/h")} — ${fmt(data.rpm, " RPM")}<br/>Nhiên liệu: ${fmt(data.fuel_percent, " %")}`);
-          } else {
-            markers[id].setLatLng([data.gps.lat, data.gps.lng]);
-            markers[id].setPopupContent(
-              `<strong>${id.toUpperCase()}</strong><br/>${fmt(data.speed_kph, " km/h")} — ${fmt(data.rpm, " RPM")}<br/>Nhiên liệu: ${fmt(data.fuel_percent, " %")}`
-            );
-          }
-        } else {
-          dom[id].gps.textContent = "—";
-        }
-        dom[id].updated.textContent = fmtTime(data.lastUpdated || Date.now());
-      }, (err) => {
-        console.error("Firebase error:", err);
-      });
-    });
+    const latestRef = ref(db, "obd/latest");
+onValue(latestRef, (snap) => {
+  const data = snap.val() || {};
+
+  // Hiển thị lên "Xe 1" (car1)
+  dom["car1"].speed.textContent = fmt(data.speed, " km/h");
+  dom["car1"].rpm.textContent   = fmt(data.rpm, " RPM");
+  dom["car1"].fuel.textContent  = fmt(data.coolant, " °C"); // dùng ô "Nhiên liệu" để hiển thị coolant
+  dom["car1"].gps.textContent   = "—"; // ESP32 chưa gửi GPS
+
+  // Thời gian cập nhật: dùng ms từ ESP32 (millis) => chỉ hiển thị dạng "ms since boot"
+  dom["car1"].updated.textContent = data.ms ? `${data.ms} ms` : "—";
+}, (err) => {
+  console.error("Firebase error:", err);
+});
+
 
     // 7) TUỲ CHỌN: Tự động fit bản đồ khi đã có >=1 marker
     const fitIfReady = () => {
@@ -230,4 +215,5 @@
   -->
 </body>
 </html>
+
 
