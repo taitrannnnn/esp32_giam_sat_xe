@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Giám sát 3 xe — Realtime Firebase</title>
 
-  <!-- TailwindCSS (CDN) cho giao diện nhanh, hiện đại -->
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Leaflet (bản đồ, không cần API key) -->
- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     html, body { height: 100%; }
     #map { height: 420px; }
   </style>
 </head>
+
 <body class="min-h-screen bg-slate-950 text-slate-100">
   <header class="px-4 sm:px-8 py-5 border-b border-slate-800 sticky top-0 bg-slate-950/80 backdrop-blur">
     <h1 class="text-2xl sm:text-3xl font-semibold">Giám sát đội xe (3 xe) — Cập nhật realtime từ Firebase</h1>
-    <p class="text-slate-400 mt-1">Thông số: Tốc độ (km/h), Vòng tua (RPM), Nhiên liệu (%), GPS.</p>
+    <p class="text-slate-400 mt-1">Thông số: Tốc độ (km/h), Vòng tua (RPM), Nhiệt độ nước làm mát (°C), GPS.</p>
   </header>
 
   <main class="px-4 sm:px-8 py-6 space-y-6">
-    <!-- Cards thông số cho 3 xe -->
+    <!-- Cards -->
     <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- Mẫu card, nhân 3 -->
       <article id="car1-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-xl font-semibold">Xe 1</h2>
@@ -35,7 +35,7 @@
         <div class="space-y-2">
           <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car1-speed">—</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car1-rpm">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Nhiên liệu</span><strong id="car1-fuel">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Coolant</span><strong id="car1-coolant">—</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car1-gps">—</strong></div>
         </div>
       </article>
@@ -48,7 +48,7 @@
         <div class="space-y-2">
           <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car2-speed">—</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car2-rpm">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Nhiên liệu</span><strong id="car2-fuel">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Coolant</span><strong id="car2-coolant">—</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car2-gps">—</strong></div>
         </div>
       </article>
@@ -61,13 +61,13 @@
         <div class="space-y-2">
           <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car3-speed">—</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car3-rpm">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Nhiên liệu</span><strong id="car3-fuel">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">Coolant</span><strong id="car3-coolant">—</strong></div>
           <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car3-gps">—</strong></div>
         </div>
       </article>
     </section>
 
-    <!-- Bản đồ vị trí 3 xe -->
+    <!-- Map -->
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-3 shadow-lg">
       <div class="flex items-center justify-between px-1 pb-2">
         <h3 class="text-lg font-semibold">Bản đồ GPS (Leaflet + OpenStreetMap)</h3>
@@ -77,81 +77,143 @@
     </section>
   </main>
 
-  <!-- Firebase v10 (ESM, Realtime Database) -->
+  <!-- Firebase -->
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBsA0_xFCmVEU5AgjKZDh50WhTe_06Bfgk",
-    authDomain: "esp32-606ff.firebaseapp.com",
-    databaseURL: "https://esp32-606ff-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "esp32-606ff",
-    storageBucket: "esp32-606ff.firebasestorage.app",
-    messagingSenderId: "884972816677",
-    appId: "1:884972816677:web:594fe5876f9acb8ea3f2cc",
-    measurementId: "G-ZSH8JDZ35J"
-  };
+    // ====== Firebase config (giữ nguyên của bạn) ======
+    const firebaseConfig = {
+      apiKey: "AIzaSyBsA0_xFCmVEU5AgjKZDh50WhTe_06Bfgk",
+      authDomain: "esp32-606ff.firebaseapp.com",
+      databaseURL: "https://esp32-606ff-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "esp32-606ff",
+      storageBucket: "esp32-606ff.firebasestorage.app",
+      messagingSenderId: "884972816677",
+      appId: "1:884972816677:web:594fe5876f9acb8ea3f2cc",
+      measurementId: "G-ZSH8JDZ35J"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
 
-  // DOM (Xe 1)
-  const speedEl = document.getElementById("car1-speed");
-  const rpmEl   = document.getElementById("car1-rpm");
-  const fuelEl  = document.getElementById("car1-fuel");
-  const gpsEl   = document.getElementById("car1-gps");
-  const updEl   = document.getElementById("car1-updated");
+    // ====== DOM mapping cho 3 xe ======
+    const carIds = ["car1", "car2", "car3"];
+    const dom = Object.fromEntries(
+      carIds.map(id => [id, {
+        speed:   document.getElementById(`${id}-speed`),
+        rpm:     document.getElementById(`${id}-rpm`),
+        coolant: document.getElementById(`${id}-coolant`),
+        gps:     document.getElementById(`${id}-gps`),
+        updated: document.getElementById(`${id}-updated`)
+      }])
+    );
 
-  function fmt(val, unit="") {
-    if (val === undefined || val === null || Number.isNaN(val)) return "—";
-    return `${val}${unit}`;
-  }
-
-  // Lắng nghe đúng node ESP32 ghi
-  const latestRef = ref(db, "obd/latest");
-  onValue(latestRef, (snap) => {
-    const d = snap.val();
-    console.log("obd/latest =", d);   // <<< cực quan trọng để debug
-    if (!d) {
-      updEl.textContent = "No data";
-      return;
+    function fmt(val, unit="") {
+      if (val === undefined || val === null || Number.isNaN(val)) return "—";
+      // hiển thị gọn
+      if (typeof val === "number") return `${val.toLocaleString()}${unit}`;
+      return `${val}${unit}`;
     }
-    speedEl.textContent = fmt(d.speed, " km/h");
-    rpmEl.textContent   = fmt(d.rpm, " RPM");
-    fuelEl.textContent  = fmt(d.coolant, " °C"); // tạm dùng ô nhiên liệu hiển thị coolant
-    gpsEl.textContent   = "—";
-    updEl.textContent   = d.ms ? `${d.ms} ms` : "—";
-  }, (err) => {
-    console.error("Firebase onValue error:", err);
-    updEl.textContent = "Firebase error";
-  });
-</script>
 
-
-  <!-- Gợi ý cấu trúc dữ liệu (tham khảo)
-  {
-    "vehicles": {
-      "car1": {
-        "speed_kph": 52,
-        "rpm": 1800,
-        "fuel_percent": 64,
-        "gps": { "lat": 10.7769, "lng": 106.7009 },
-        "lastUpdated": 1733576400000
-      },
-      "car2": { ... },
-      "car3": { ... }
+    function fmtTime(ts) {
+      if (!ts) return "—";
+      const d = new Date(ts);
+      return d.toLocaleTimeString() + " • " + d.toLocaleDateString();
     }
-  }
-  -->
 
-  <!-- Lưu ý bảo mật:
-    - Thiết lập Realtime Database Rules phù hợp (chỉ đọc/ghi cho người dùng được phép).
-    - Không để API key nhạy cảm bên client nếu dùng các dịch vụ khác.
-  -->
+    // ====== Leaflet Map ======
+    const map = L.map("map", { zoomControl: true, attributionControl: true });
+    map.setView([16.047, 108.206], 6);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    function markerIcon(color) {
+      const svg = encodeURIComponent(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none'
+          stroke='${color}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+          <path d='M12 21s-6-5.686-6-10a6 6 0 1 1 12 0c0 4.314-6 10-6 10z'/>
+          <circle cx='12' cy='11' r='2'/>
+        </svg>`);
+      return L.icon({
+        iconUrl: `data:image/svg+xml;utf8,${svg}`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -28]
+      });
+    }
+
+    const colorByCar = { car1: "#60a5fa", car2: "#34d399", car3: "#f472b6" };
+    const markers = {};
+
+    function updateMarker(id, lat, lng, infoHtml) {
+      if (!markers[id]) {
+        markers[id] = L.marker([lat, lng], { icon: markerIcon(colorByCar[id] || "#ffffff") })
+          .addTo(map)
+          .bindPopup(infoHtml);
+      } else {
+        markers[id].setLatLng([lat, lng]);
+        markers[id].setPopupContent(infoHtml);
+      }
+    }
+
+    function fitBoundsIfAny() {
+      const latLngs = Object.values(markers).map(m => m.getLatLng());
+      if (latLngs.length > 0) {
+        const b = L.latLngBounds(latLngs);
+        map.fitBounds(b.pad(0.3));
+      }
+    }
+
+    // ====== Listen realtime: vehicles/<carId> ======
+    carIds.forEach((id) => {
+      const vehicleRef = ref(db, `vehicles/${id}`);
+
+      onValue(vehicleRef, (snap) => {
+        const data = snap.val();
+        console.log(`vehicles/${id} =`, data);
+
+        if (!data) {
+          dom[id].speed.textContent = "—";
+          dom[id].rpm.textContent = "—";
+          dom[id].coolant.textContent = "—";
+          dom[id].gps.textContent = "—";
+          dom[id].updated.textContent = "No data";
+          return;
+        }
+
+        // đúng field bạn đang upload từ ESP32
+        dom[id].speed.textContent   = fmt(data.speed_kph, " km/h");
+        dom[id].rpm.textContent     = fmt(data.rpm, " RPM");
+        dom[id].coolant.textContent = fmt(data.coolant_c, " °C");
+        dom[id].updated.textContent = fmtTime(data.lastUpdated);
+
+        // GPS
+        if (data.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
+          const lat = data.gps.lat;
+          const lng = data.gps.lng;
+          dom[id].gps.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+          const popupHtml =
+            `<strong>${id.toUpperCase()}</strong><br/>
+             Speed: ${fmt(data.speed_kph, " km/h")}<br/>
+             RPM: ${fmt(data.rpm, " RPM")}<br/>
+             Coolant: ${fmt(data.coolant_c, " °C")}<br/>
+             Updated: ${fmtTime(data.lastUpdated)}`;
+
+          updateMarker(id, lat, lng, popupHtml);
+          fitBoundsIfAny();
+        } else {
+          dom[id].gps.textContent = "—";
+        }
+      }, (err) => {
+        console.error("Firebase onValue error:", err);
+        dom[id].updated.textContent = "Firebase error";
+      });
+    });
+  </script>
 </body>
 </html>
-
-
-
-
