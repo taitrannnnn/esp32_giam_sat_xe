@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Giám sát 3 xe — Realtime Firebase</title>
 
-  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -19,70 +17,69 @@
 </head>
 
 <body class="min-h-screen bg-slate-950 text-slate-100">
-  <header class="px-4 sm:px-8 py-5 border-b border-slate-800 sticky top-0 bg-slate-950/80 backdrop-blur">
-    <h1 class="text-2xl sm:text-3xl font-semibold">Giám sát đội xe (3 xe) — Cập nhật realtime từ Firebase</h1>
-    <p class="text-slate-400 mt-1">Thông số: Tốc độ (km/h), Vòng tua (RPM), Nhiệt độ nước làm mát (°C), GPS.</p>
+  <header class="px-4 sm:px-8 py-5 border-b border-slate-800 sticky top-0 bg-slate-950/80 backdrop-blur z-50">
+    <h1 class="text-2xl sm:text-3xl font-semibold">Giám sát đội xe (3 xe) — Cập nhật realtime</h1>
+    <p class="text-slate-400 mt-1">Nguồn dữ liệu: Firebase (vehicles/carX/speed, rpm, coolant_temp)</p>
   </header>
 
   <main class="px-4 sm:px-8 py-6 space-y-6">
-    <!-- Cards -->
     <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <article id="car1-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg">
+      
+      <article id="car1-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg transition hover:border-blue-500/50">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-xl font-semibold">Xe 1</h2>
+          <h2 class="text-xl font-semibold text-blue-400">Xe 1</h2>
           <span id="car1-updated" class="text-xs text-slate-400">—</span>
         </div>
         <div class="space-y-2">
-          <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car1-speed">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car1-rpm">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Coolant</span><strong id="car1-coolant">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car1-gps">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Tốc độ</span><strong id="car1-speed" class="text-lg">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Vòng tua</span><strong id="car1-rpm" class="text-lg">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Nhiệt độ</span><strong id="car1-coolant" class="text-lg">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car1-gps" class="text-sm font-mono">—</strong></div>
         </div>
       </article>
 
-      <article id="car2-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg">
+      <article id="car2-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg transition hover:border-emerald-500/50">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-xl font-semibold">Xe 2</h2>
+          <h2 class="text-xl font-semibold text-emerald-400">Xe 2</h2>
           <span id="car2-updated" class="text-xs text-slate-400">—</span>
         </div>
         <div class="space-y-2">
-          <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car2-speed">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car2-rpm">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Coolant</span><strong id="car2-coolant">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car2-gps">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Tốc độ</span><strong id="car2-speed" class="text-lg">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Vòng tua</span><strong id="car2-rpm" class="text-lg">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Nhiệt độ</span><strong id="car2-coolant" class="text-lg">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car2-gps" class="text-sm font-mono">—</strong></div>
         </div>
       </article>
 
-      <article id="car3-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg">
+      <article id="car3-card" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg transition hover:border-pink-500/50">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-xl font-semibold">Xe 3</h2>
+          <h2 class="text-xl font-semibold text-pink-400">Xe 3</h2>
           <span id="car3-updated" class="text-xs text-slate-400">—</span>
         </div>
         <div class="space-y-2">
-          <div class="flex justify-between"><span class="text-slate-400">Tốc độ</span><strong id="car3-speed">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Vòng tua</span><strong id="car3-rpm">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">Coolant</span><strong id="car3-coolant">—</strong></div>
-          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car3-gps">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Tốc độ</span><strong id="car3-speed" class="text-lg">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Vòng tua</span><strong id="car3-rpm" class="text-lg">—</strong></div>
+          <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Nhiệt độ</span><strong id="car3-coolant" class="text-lg">—</strong></div>
+          <div class="flex justify-between"><span class="text-slate-400">GPS</span><strong id="car3-gps" class="text-sm font-mono">—</strong></div>
         </div>
       </article>
+
     </section>
 
-    <!-- Map -->
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-3 shadow-lg">
       <div class="flex items-center justify-between px-1 pb-2">
-        <h3 class="text-lg font-semibold">Bản đồ GPS (Leaflet + OpenStreetMap)</h3>
-        <div class="text-xs text-slate-400">kéo/thu phóng để xem khu vực</div>
+        <h3 class="text-lg font-semibold">Bản đồ định vị</h3>
+        <div class="text-xs text-slate-400">Tự động cập nhật vị trí</div>
       </div>
-      <div id="map" class="rounded-xl"></div>
+      <div id="map" class="rounded-xl z-0"></div>
     </section>
   </main>
 
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // ====== Firebase config (giữ nguyên của bạn) ======
+    // 1. Cấu hình Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBsA0_xFCmVEU5AgjKZDh50WhTe_06Bfgk",
       authDomain: "esp32-606ff.firebaseapp.com",
@@ -97,7 +94,7 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    // ====== DOM mapping cho 3 xe ======
+    // 2. Mapping DOM Elements
     const carIds = ["car1", "car2", "car3"];
     const dom = Object.fromEntries(
       carIds.map(id => [id, {
@@ -109,40 +106,39 @@
       }])
     );
 
+    // Helper: Định dạng hiển thị
     function fmt(val, unit="") {
-      if (val === undefined || val === null || Number.isNaN(val)) return "—";
-      // hiển thị gọn
-      if (typeof val === "number") return `${val.toLocaleString()}${unit}`;
-      return `${val}${unit}`;
+      if (val === undefined || val === null || val === "" || Number.isNaN(Number(val))) return "—";
+      return `${Number(val).toLocaleString()}${unit}`;
     }
 
     function fmtTime(ts) {
-      if (!ts) return "—";
-      const d = new Date(ts);
-      return d.toLocaleTimeString() + " • " + d.toLocaleDateString();
+      if (!ts) return "Live"; 
+      // Nếu bạn gửi timestamp từ ESP32 thì dùng dòng dưới, nếu không thì dùng giờ hiện tại
+      // const d = new Date(ts); return d.toLocaleTimeString();
+      const d = new Date(); 
+      return d.toLocaleTimeString();
     }
 
-    // ====== Leaflet Map ======
-    const map = L.map("map", { zoomControl: true, attributionControl: true });
-    map.setView([16.047, 108.206], 6);
-
+    // 3. Khởi tạo bản đồ Leaflet
+    const map = L.map("map", { zoomControl: true }).setView([16.047, 108.206], 6);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors"
+      attribution: "&copy; OpenStreetMap"
     }).addTo(map);
 
+    // Tạo icon SVG động theo màu
     function markerIcon(color) {
       const svg = encodeURIComponent(`
-        <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none'
-          stroke='${color}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
-          <path d='M12 21s-6-5.686-6-10a6 6 0 1 1 12 0c0 4.314-6 10-6 10z'/>
-          <circle cx='12' cy='11' r='2'/>
+        <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='${color}' stroke='white' stroke-width='1.5'>
+          <path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/>
+          <circle cx='12' cy='9' r='2.5' fill='white'/>
         </svg>`);
       return L.icon({
         iconUrl: `data:image/svg+xml;utf8,${svg}`,
         iconSize: [32, 32],
         iconAnchor: [16, 32],
-        popupAnchor: [0, -28]
+        popupAnchor: [0, -32]
       });
     }
 
@@ -151,7 +147,7 @@
 
     function updateMarker(id, lat, lng, infoHtml) {
       if (!markers[id]) {
-        markers[id] = L.marker([lat, lng], { icon: markerIcon(colorByCar[id] || "#ffffff") })
+        markers[id] = L.marker([lat, lng], { icon: markerIcon(colorByCar[id]) })
           .addTo(map)
           .bindPopup(infoHtml);
       } else {
@@ -160,58 +156,69 @@
       }
     }
 
+    // Tự động zoom bản đồ bao quát tất cả xe
     function fitBoundsIfAny() {
       const latLngs = Object.values(markers).map(m => m.getLatLng());
       if (latLngs.length > 0) {
-        const b = L.latLngBounds(latLngs);
-        map.fitBounds(b.pad(0.3));
+        const group = L.featureGroup(Object.values(markers));
+        map.fitBounds(group.getBounds().pad(0.1));
       }
     }
 
-    // ====== Listen realtime: vehicles/<carId> ======
+    // 4. Lắng nghe dữ liệu từ Firebase
     carIds.forEach((id) => {
+      // Lấy toàn bộ object của xe (ví dụ: vehicles/car1)
       const vehicleRef = ref(db, `vehicles/${id}`);
 
       onValue(vehicleRef, (snap) => {
         const data = snap.val();
-        console.log(`vehicles/${id} =`, data);
+        console.log(`Update ${id}:`, data);
 
         if (!data) {
-          dom[id].speed.textContent = "—";
-          dom[id].rpm.textContent = "—";
-          dom[id].coolant.textContent = "—";
-          dom[id].gps.textContent = "—";
-          dom[id].updated.textContent = "No data";
+          dom[id].updated.textContent = "Offline";
           return;
         }
 
-        // đúng field bạn đang upload từ ESP32
-        dom[id].speed.textContent   = fmt(data.speed_kph, " km/h");
+        // --- CẬP NHẬT GIÁ TRỊ TẠI ĐÂY ---
+        // Sử dụng đúng key: speed, rpm, coolant_temp
+        dom[id].speed.textContent   = fmt(data.speed, " km/h");
         dom[id].rpm.textContent     = fmt(data.rpm, " RPM");
-        dom[id].coolant.textContent = fmt(data.coolant_c, " °C");
-        dom[id].updated.textContent = fmtTime(data.lastUpdated);
+        dom[id].coolant.textContent = fmt(data.coolant_temp, " °C");
+        
+        dom[id].updated.textContent = fmtTime(data.timestamp); // Nếu có field timestamp
 
-        // GPS
-        if (data.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
-          const lat = data.gps.lat;
-          const lng = data.gps.lng;
-          dom[id].gps.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        // Xử lý GPS
+        // Giả sử cấu trúc là data.gps.lat và data.gps.lng
+        if (data.gps && (data.gps.lat || data.gps.lat === 0) && (data.gps.lng || data.gps.lng === 0)) {
+          const lat = parseFloat(data.gps.lat);
+          const lng = parseFloat(data.gps.lng);
+          
+          dom[id].gps.textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
-          const popupHtml =
-            `<strong>${id.toUpperCase()}</strong><br/>
-             Speed: ${fmt(data.speed_kph, " km/h")}<br/>
-             RPM: ${fmt(data.rpm, " RPM")}<br/>
-             Coolant: ${fmt(data.coolant_c, " °C")}<br/>
-             Updated: ${fmtTime(data.lastUpdated)}`;
-
+          const popupHtml = `
+            <div style="font-family: sans-serif; text-align:center;">
+              <strong style="color:${colorByCar[id]}; font-size:1.1em">${id.toUpperCase()}</strong><br/>
+              <hr style="margin:4px 0; opacity:0.3"/>
+              Speed: <b>${fmt(data.speed)}</b> km/h<br/>
+              Temp: <b>${fmt(data.coolant_temp)}</b> °C
+            </div>
+          `;
+          
           updateMarker(id, lat, lng, popupHtml);
-          fitBoundsIfAny();
-        } else {
-          dom[id].gps.textContent = "—";
+          // fitBoundsIfAny(); // Bỏ comment nếu muốn bản đồ tự zoom theo xe
+        } 
+        // Trường hợp GPS nằm phẳng (vehicles/car1/lat) thì dùng đoạn dưới:
+        /*
+        else if (data.lat && data.lng) {
+           // logic tương tự
         }
+        */
+        else {
+          dom[id].gps.textContent = "No GPS";
+        }
+
       }, (err) => {
-        console.error("Firebase onValue error:", err);
-        dom[id].updated.textContent = "Firebase error";
+        console.error("Lỗi Firebase:", err);
       });
     });
   </script>
