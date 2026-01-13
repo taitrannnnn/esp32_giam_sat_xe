@@ -186,9 +186,9 @@
         }
 
         // đúng field bạn đang upload từ ESP32
-        dom[id].speed.textContent   = fmt(data.speed_kph, " km/h");
+        dom[id].speed.textContent   = fmt(data.speed, " km/h");
         dom[id].rpm.textContent     = fmt(data.rpm, " RPM");
-        dom[id].coolant.textContent = fmt(data.coolant_c, " °C");
+        dom[id].coolant.textContent = fmt(data.coolant_temp, " °C");
         dom[id].updated.textContent = fmtTime(data.lastUpdated);
 
         // GPS
@@ -199,9 +199,9 @@
 
           const popupHtml =
             `<strong>${id.toUpperCase()}</strong><br/>
-             Speed: ${fmt(data.speed_kph, " km/h")}<br/>
+             Speed: ${fmt(data.speed, " km/h")}<br/>
              RPM: ${fmt(data.rpm, " RPM")}<br/>
-             Coolant: ${fmt(data.coolant_c, " °C")}<br/>
+             Coolant: ${fmt(data.coolant_temp, " °C")}<br/>
              Updated: ${fmtTime(data.lastUpdated)}`;
 
           updateMarker(id, lat, lng, popupHtml);
@@ -217,3 +217,4 @@
   </script>
 </body>
 </html>
+
