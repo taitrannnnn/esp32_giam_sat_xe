@@ -75,7 +75,7 @@
 
     function fmt(val, unit="") {
       if (val === undefined || val === null || Number.isNaN(val)) return "—";
-      if (typeof val === "number") return `${val.toLocaleString()}${unit}`;
+      if (typeof val === "number") return `${val.toLocaleString("vi-VN")}${unit}`;
       return `${val}${unit}`;
     }
 
@@ -99,14 +99,25 @@
     function setMarker(lat, lng, popupHtml) {
       marker.setLatLng([lat, lng]);
       marker.setPopupContent(popupHtml);
+      // tránh giật map quá nhiều: chỉ zoom 15 khi đã có GPS lần đầu
       map.setView([lat, lng], 15, { animate: true });
     }
 
-    // ====== listen đúng path bạn yêu cầu ======
+    // ====== listen đúng path vehicles/car1 ======
     const vehicleRef = ref(db, "vehicles/car1");
 
-    // online/offline: dựa theo “có data upload gần đây”
+    // online/offline: dựa theo “timestamp được update gần đây”
     const OFFLINE_AFTER_MS = 15000;
+    let lastTimestamp = 0;
+
+    // cập nhật online/offline realtime (kể cả khi DB không đổi)
+    setInterval(() => {
+      if (!lastTimestamp) {
+        elOnline.textContent = "—";
+        return;
+      }
+      elOnline.textContent = (Date.now() - lastTimestamp <= OFFLINE_AFTER_MS) ? "ONLINE" : "OFFLINE";
+    }, 1000);
 
     onValue(vehicleRef, (snap) => {
       const data = snap.val();
@@ -119,6 +130,7 @@
         elGps.textContent = "—";
         elUpdated.textContent = "No data";
         elOnline.textContent = "OFFLINE";
+        lastTimestamp = 0;
         return;
       }
 
@@ -127,21 +139,15 @@
       elCoolant.textContent = fmt(data.coolant_temp, " °C");
       elUpdated.textContent = fmtTimeFromEpochMs(data.timestamp);
 
-      // Online/offline theo timestamp
-      if (typeof data.timestamp === "number") {
-        elOnline.textContent = (Date.now() - data.timestamp <= OFFLINE_AFTER_MS) ? "ONLINE" : "OFFLINE";
-      } else {
-        elOnline.textContent = "—";
-      }
+      if (typeof data.timestamp === "number") lastTimestamp = data.timestamp;
 
-      // GPS ưu tiên dạng int E5 (khuyên dùng)
+      // GPS: ưu tiên lat_e5/lng_e5, fallback gps.lat/gps.lng
       let lat = null, lng = null;
 
       if (typeof data.lat_e5 === "number" && typeof data.lng_e5 === "number") {
         lat = data.lat_e5 / 100000;
         lng = data.lng_e5 / 100000;
       } else if (data.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
-        // fallback nếu bạn vẫn lưu gps.lat/gps.lng
         lat = data.gps.lat;
         lng = data.gps.lng;
       }
