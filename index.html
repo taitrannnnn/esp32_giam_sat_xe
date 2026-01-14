@@ -52,6 +52,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
+    // ===== Firebase config =====
     const firebaseConfig = {
       apiKey: "AIzaSyBsA0_xFCmVEU5AgjKZDh50WhTe_06Bfgk",
       authDomain: "esp32-606ff.firebaseapp.com",
@@ -63,9 +64,13 @@
       measurementId: "G-ZSH8JDZ35J"
     };
 
+    const VEHICLE_ID = "car1";          // ✅ lấy từ vehicles/car1
+    const OFFLINE_AFTER_MS = 15000;     // 15s không thấy update => OFFLINE
+
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
+    // ===== DOM =====
     const elSpeed   = document.getElementById("speed");
     const elRpm     = document.getElementById("rpm");
     const elCoolant = document.getElementById("coolant");
@@ -80,47 +85,72 @@
     }
 
     function fmtTimeFromEpochMs(ts) {
-      if (!ts) return "—";
+      if (!ts || typeof ts !== "number") return "—";
       const d = new Date(ts);
       return d.toLocaleTimeString("vi-VN") + " • " + d.toLocaleDateString("vi-VN");
     }
 
-    // ====== Leaflet ======
+    // ===== Leaflet =====
     const map = L.map("map");
     map.setView([16.047, 108.206], 6);
+
+    // Fix map bị “lệch/khuyết” do render trong container
+    setTimeout(() => map.invalidateSize(true), 400);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    const marker = L.marker([16.047, 108.206]).addTo(map).bindPopup("car1");
+    const marker = L.marker([16.047, 108.206]).addTo(map).bindPopup(VEHICLE_ID);
+
+    let hasCenteredOnce = false;
 
     function setMarker(lat, lng, popupHtml) {
-  marker.setLatLng([lat, lng]);
-  marker.setPopupContent(popupHtml);
-  map.setView([lat, lng], 13, { animate: true }); // 13 đỡ giật hơn 15
-}
+      marker.setLatLng([lat, lng]);
+      marker.setPopupContent(popupHtml);
 
-    // ====== listen đúng path vehicles/car1 ======
-    const vehicleRef = ref(db, "vehicles/car1");
-
-    // online/offline: dựa theo “timestamp được update gần đây”
-    const OFFLINE_AFTER_MS = 15000;
-    let lastTimestamp = 0;
-
-    // cập nhật online/offline realtime (kể cả khi DB không đổi)
-    setInterval(() => {
-      if (!lastTimestamp) {
-        elOnline.textContent = "—";
-        return;
+      // chỉ auto focus lần đầu để tránh giật map liên tục
+      if (!hasCenteredOnce) {
+        map.setView([lat, lng], 15, { animate: true });
+        hasCenteredOnce = true;
       }
-      elOnline.textContent = (Date.now() - lastTimestamp <= OFFLINE_AFTER_MS) ? "ONLINE" : "OFFLINE";
-    }, 1000);
+    }
+
+    // ===== đọc GPS chuẩn theo schema DB của bạn =====
+    function extractLatLng(data) {
+      let lat = null, lng = null;
+
+      // ✅ schema bạn đang có: gps.lat_e5 / gps.lng_e5
+      if (data?.gps && typeof data.gps.lat_e5 === "number" && typeof data.gps.lng_e5 === "number") {
+        lat = data.gps.lat_e5 / 100000;
+        lng = data.gps.lng_e5 / 100000;
+        return { lat, lng };
+      }
+
+      // fallback nếu sau này bạn chuyển sang lat_e5/lng_e5 top-level
+      if (typeof data?.lat_e5 === "number" && typeof data?.lng_e5 === "number") {
+        lat = data.lat_e5 / 100000;
+        lng = data.lng_e5 / 100000;
+        return { lat, lng };
+      }
+
+      // fallback nếu bạn chuyển sang gps.lat/gps.lng dạng float
+      if (data?.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
+        lat = data.gps.lat;
+        lng = data.gps.lng;
+        return { lat, lng };
+      }
+
+      return { lat: null, lng: null };
+    }
+
+    // ===== listen đúng path =====
+    const vehicleRef = ref(db, `vehicles/${VEHICLE_ID}`);
 
     onValue(vehicleRef, (snap) => {
       const data = snap.val();
-      console.log("vehicles/car1 =", data);
+      console.log(`vehicles/${VEHICLE_ID} =`, data);
 
       if (!data) {
         elSpeed.textContent = "—";
@@ -129,56 +159,50 @@
         elGps.textContent = "—";
         elUpdated.textContent = "No data";
         elOnline.textContent = "OFFLINE";
-        lastTimestamp = 0;
         return;
       }
 
-      elSpeed.textContent   = fmt(data.speed, " km/h");
+      // Field fallback (vì DB bạn đang có cả speed/speed_kph, coolant_temp/coolant_c)
+      const speed = (typeof data.speed === "number") ? data.speed : data.speed_kph;
+      const coolant = (typeof data.coolant_temp === "number") ? data.coolant_temp : data.coolant_c;
+
+      elSpeed.textContent   = fmt(speed, " km/h");
       elRpm.textContent     = fmt(data.rpm, " RPM");
-      elCoolant.textContent = fmt(data.coolant_temp, " °C");
+      elCoolant.textContent = fmt(coolant, " °C");
       elUpdated.textContent = fmtTimeFromEpochMs(data.timestamp);
 
-      if (typeof data.timestamp === "number") lastTimestamp = data.timestamp;
+      // Online/offline: dựa theo timestamp (có data upload gần đây)
+      if (typeof data.timestamp === "number") {
+        elOnline.textContent = (Date.now() - data.timestamp <= OFFLINE_AFTER_MS) ? "ONLINE" : "OFFLINE";
+      } else {
+        elOnline.textContent = "—";
+      }
 
-      // GPS: ưu tiên lat_e5/lng_e5, fallback gps.lat/gps.lng
-     // GPS: lấy từ gps.lat/gps.lng (ESP32 đang upload dạng object gps)
-let lat = null, lng = null;
+      // GPS
+      const { lat, lng } = extractLatLng(data);
 
-if (data.gps && data.gps.lat != null && data.gps.lng != null) {
-  lat = Number(data.gps.lat);
-  lng = Number(data.gps.lng);
-} else if (data.lat != null && data.lng != null) {
-  // fallback nếu sau này bạn đổi schema sang lat/lng ở root
-  lat = Number(data.lat);
-  lng = Number(data.lng);
-} else if (data.lat_e5 != null && data.lng_e5 != null) {
-  // fallback nếu bạn đổi sang int e5
-  lat = Number(data.lat_e5) / 100000;
-  lng = Number(data.lng_e5) / 100000;
-}
+      if (typeof lat === "number" && typeof lng === "number") {
+        elGps.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
-if (Number.isFinite(lat) && Number.isFinite(lng)) {
-  elGps.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        const popupHtml =
+          `<strong>${VEHICLE_ID}</strong><br/>
+           Speed: ${fmt(speed, " km/h")}<br/>
+           RPM: ${fmt(data.rpm, " RPM")}<br/>
+           Coolant: ${fmt(coolant, " °C")}<br/>
+           Updated: ${fmtTimeFromEpochMs(data.timestamp)}<br/>
+           GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
-  const popupHtml =
-    `<strong>car1</strong><br/>
-     Speed: ${fmt(data.speed, " km/h")}<br/>
-     RPM: ${fmt(data.rpm, " RPM")}<br/>
-     Coolant: ${fmt(data.coolant_temp, " °C")}<br/>
-     Updated: ${fmtTimeFromEpochMs(data.timestamp)}<br/>
-     GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-
-  setMarker(lat, lng, popupHtml);
-} else {
-  elGps.textContent = "—";
-}
+        setMarker(lat, lng, popupHtml);
+      } else {
+        elGps.textContent = "—";
+      }
 
     }, (err) => {
       console.error("Firebase onValue error:", err);
       elUpdated.textContent = "Firebase error";
       elOnline.textContent = "OFFLINE";
+      elGps.textContent = "—";
     });
   </script>
 </body>
 </html>
-
