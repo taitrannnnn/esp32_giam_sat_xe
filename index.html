@@ -97,11 +97,10 @@
     const marker = L.marker([16.047, 108.206]).addTo(map).bindPopup("car1");
 
     function setMarker(lat, lng, popupHtml) {
-      marker.setLatLng([lat, lng]);
-      marker.setPopupContent(popupHtml);
-      // tránh giật map quá nhiều: chỉ zoom 15 khi đã có GPS lần đầu
-      map.setView([lat, lng], 15, { animate: true });
-    }
+  marker.setLatLng([lat, lng]);
+  marker.setPopupContent(popupHtml);
+  map.setView([lat, lng], 13, { animate: true }); // 13 đỡ giật hơn 15
+}
 
     // ====== listen đúng path vehicles/car1 ======
     const vehicleRef = ref(db, "vehicles/car1");
@@ -142,31 +141,37 @@
       if (typeof data.timestamp === "number") lastTimestamp = data.timestamp;
 
       // GPS: ưu tiên lat_e5/lng_e5, fallback gps.lat/gps.lng
-      let lat = null, lng = null;
+     // GPS: lấy từ gps.lat/gps.lng (ESP32 đang upload dạng object gps)
+let lat = null, lng = null;
 
-      if (typeof data.lat_e5 === "number" && typeof data.lng_e5 === "number") {
-        lat = data.lat_e5 / 100000;
-        lng = data.lng_e5 / 100000;
-      } else if (data.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
-        lat = data.gps.lat;
-        lng = data.gps.lng;
-      }
+if (data.gps && data.gps.lat != null && data.gps.lng != null) {
+  lat = Number(data.gps.lat);
+  lng = Number(data.gps.lng);
+} else if (data.lat != null && data.lng != null) {
+  // fallback nếu sau này bạn đổi schema sang lat/lng ở root
+  lat = Number(data.lat);
+  lng = Number(data.lng);
+} else if (data.lat_e5 != null && data.lng_e5 != null) {
+  // fallback nếu bạn đổi sang int e5
+  lat = Number(data.lat_e5) / 100000;
+  lng = Number(data.lng_e5) / 100000;
+}
 
-      if (typeof lat === "number" && typeof lng === "number") {
-        elGps.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+if (Number.isFinite(lat) && Number.isFinite(lng)) {
+  elGps.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
-        const popupHtml =
-          `<strong>car1</strong><br/>
-           Speed: ${fmt(data.speed, " km/h")}<br/>
-           RPM: ${fmt(data.rpm, " RPM")}<br/>
-           Coolant: ${fmt(data.coolant_temp, " °C")}<br/>
-           Updated: ${fmtTimeFromEpochMs(data.timestamp)}<br/>
-           GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const popupHtml =
+    `<strong>car1</strong><br/>
+     Speed: ${fmt(data.speed, " km/h")}<br/>
+     RPM: ${fmt(data.rpm, " RPM")}<br/>
+     Coolant: ${fmt(data.coolant_temp, " °C")}<br/>
+     Updated: ${fmtTimeFromEpochMs(data.timestamp)}<br/>
+     GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
-        setMarker(lat, lng, popupHtml);
-      } else {
-        elGps.textContent = "—";
-      }
+  setMarker(lat, lng, popupHtml);
+} else {
+  elGps.textContent = "—";
+}
 
     }, (err) => {
       console.error("Firebase onValue error:", err);
@@ -176,3 +181,4 @@
   </script>
 </body>
 </html>
+
