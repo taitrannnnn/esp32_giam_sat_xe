@@ -193,8 +193,11 @@
 
         // GPS
         if (data.gps && typeof data.gps.lat === "number" && typeof data.gps.lng === "number") {
-          const lat = data.gps.lat;
-          const lng = data.gps.lng;
+          const lat = data.lat_e5 / 100000;
+          const lng = data.lng_e5 / 100000;
+          
+          latSpan.textContent = lat.toFixed(5);
+          lngSpan.textContent = lng.toFixed(5);
           dom[id].gps.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
           const popupHtml =
@@ -217,4 +220,5 @@
   </script>
 </body>
 </html>
+
 
